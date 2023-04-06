@@ -65,7 +65,11 @@ Object.assign(
   )
 );
 const capitalize = (words: string) =>
-  words[0].toUpperCase() + words.slice(1).toLowerCase();
+  words
+    .replace(/[\s\n]+/, " ")
+    .split(" ")
+    .map((word) => word[0].toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 export { dev, capitalize };
 
 const isJsonable = (data: any) => {

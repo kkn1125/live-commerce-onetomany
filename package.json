@@ -1,0 +1,14 @@
+{
+  "name": "live_commerce_rtc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "socket": "cd socket/ && npm run dev",
+    "front": "cd front/ && npm run dev",
+    "start": "concurrently --kill-others-on-fail \"npm run socket\" \"npm run front\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

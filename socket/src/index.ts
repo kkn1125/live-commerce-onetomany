@@ -4,10 +4,19 @@ import uWS from "uWebSockets.js";
 import { PORT } from "./util/global";
 import { dev } from "./util/tool";
 
-import { Message, Field } from "protobufjs";
+import protobufjs from "protobufjs";
 
-Field.d(1, "float", "optional")(Message.prototype, "id");
-Field.d(2, "float", "optional")(Message.prototype, "test");
+const { Message, Field } = protobufjs;
+function alreadyHasKey(key: string) {
+  return !protobufjs.Message.$type?.fields.hasOwnProperty(key);
+}
+const fields = ["id", "test", "signal", "type", "data"];
+
+fields.forEach((field, i) => {
+  alreadyHasKey(field)
+    ? Field.d(i, "string", "optional")(Message.prototype, field)
+    : null;
+});
 
 const app = uWS
   ./*SSL*/ App({
@@ -71,6 +80,7 @@ const app = uWS
     open: (ws) => {
       const webSocketOption = ws as unknown as { url: string };
       dev.log("A WebSocket connected with URL: " + webSocketOption.url);
+      ws.subscribe("global");
     },
     message: (ws, message, isBinary) => {
       /* Ok is false if backpressure was built up, wait for drain */
@@ -86,6 +96,12 @@ const app = uWS
     },
     close: (ws, code, message) => {
       dev.log("WebSocket closed");
+
+      try {
+        ws.end(code);
+      } catch (e) {
+        console.log(e);
+      }
     },
   })
   .any("/*", (res, req) => {
@@ -104,7 +120,7 @@ function handleBinary(ws: uWS.WebSocket<unknown>, message: ArrayBuffer) {
   const uint8 = new Uint8Array(message);
   const decoded = Message.decode(uint8).toJSON();
   dev.alias("binary data").log(decoded);
-  ws.send(message, true);
+  app.publish("global", message, true);
 }
 
 function handleNotBinary(ws: uWS.WebSocket<unknown>, message: ArrayBuffer) {
