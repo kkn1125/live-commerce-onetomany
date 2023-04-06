@@ -1,5 +1,5 @@
 {
   "typeAcquisition": {
-    "include": ["jest", "react-router-dom"]
+    "include": ["jest", "react-router-dom", "@mui/material"]
   }
 }

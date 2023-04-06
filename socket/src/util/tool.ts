@@ -1,28 +1,3 @@
-export const convertParamsToObject = (params: string | object) => {
-  if (typeof params === "string") {
-    let temp = params;
-    if (params.startsWith("?")) {
-      temp = params.slice(1);
-    }
-    return Object.fromEntries(temp.split("&").map((item) => item.split("=")));
-  } else {
-    return params;
-  }
-};
-export const convertParamsToQuerystring = (params: string | object) => {
-  if (params === "") return params;
-  if (typeof params === "string") {
-    return params.startsWith("?") ? params : "?" + params;
-  } else {
-    return (
-      "?" +
-      Object.entries(params)
-        .map(([k, v]) => `${k}=${v}`)
-        .join("&")
-    );
-  }
-};
-
 import path from "path";
 import { MODE } from "./global";
 
@@ -37,9 +12,6 @@ Object.assign(
   dev,
   Object.fromEntries(
     Object.entries(console).map(([key, value]) => {
-      if (key === "memory") {
-        return [key, value];
-      }
       const wrap = function (...arg: any[]) {
         value.call(
           console,
@@ -60,6 +32,9 @@ Object.assign(
         );
         dev.prefix = "";
       };
+      if (key === "memory") {
+        return [key, value];
+      }
       return [key, MODE === "development" ? wrap.bind(console) : () => {}];
     })
   )
