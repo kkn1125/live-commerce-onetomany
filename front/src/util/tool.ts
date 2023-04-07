@@ -193,3 +193,18 @@ export const getRealPath = (routerPath: string, path: string) => {
   }
   return build;
 };
+
+export function queryParser(object: object) {
+  return Object.fromEntries(
+    Object.entries(object).map(([k, v]) => {
+      if (typeof v === "string" && v.match(/^\{(.)+}$/)) {
+        v = queryParser(JSON.parse(v));
+      }
+      try {
+        return [k, v];
+      } catch (e) {
+        return [k, v];
+      }
+    })
+  );
+}

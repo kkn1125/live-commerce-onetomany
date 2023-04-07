@@ -10,11 +10,23 @@ const { Message, Field } = protobufjs;
 function alreadyHasKey(key: string) {
   return !protobufjs.Message.$type?.fields.hasOwnProperty(key);
 }
-const fields = ["id", "test", "signal", "type", "data"];
+const fields = ["id", "test", "signal", "type", "data", "server", "client"];
+
+type MessageDataType = {
+  signal: string;
+  type: string;
+  data: string;
+  server: boolean;
+  client: boolean;
+};
 
 fields.forEach((field, i) => {
   alreadyHasKey(field)
-    ? Field.d(i, "string", "optional")(Message.prototype, field)
+    ? Field.d(
+        i,
+        field.match(/server|client/) ? "bool" : "string",
+        "optional"
+      )(Message.prototype, field)
     : null;
 });
 
@@ -115,18 +127,44 @@ const app = uWS
     }
   });
 
+/* 바이너리 데이터 컨트롤 */
 function handleBinary(ws: uWS.WebSocket<unknown>, message: ArrayBuffer) {
-  app;
+  // app;
   const uint8 = new Uint8Array(message);
-  const decoded = Message.decode(uint8).toJSON();
+  const decodeOrigin = Message.decode(uint8).toJSON();
+  const decoded = {
+    ...decodeOrigin,
+    client: false,
+    server: true,
+  } as MessageDataType;
+  const handleData = { ...decoded, data: JSON.parse(decoded.data) };
   dev.alias("binary data").log(decoded);
-  app.publish("global", message, true);
+  if (decoded.signal.match(/(signal):(.+)/)) {
+    app.publish(
+      "global",
+      Message.encode(Message.create(decoded)).finish(),
+      true
+    );
+  } else {
+    handleMediaData(handleData);
+    ws.publish(
+      "global",
+      Message.encode(Message.create(decoded)).finish(),
+      true
+    );
+  }
 }
 
+/* 논 바이너리 데이터 컨트롤 */
 function handleNotBinary(ws: uWS.WebSocket<unknown>, message: ArrayBuffer) {
-  app;
+  // app;
   const decoded = new TextDecoder().decode(message);
   const parsed = JSON.parse(decoded);
   dev.alias("non-binary data").log(parsed);
   ws.send(message);
+}
+
+/* 바이너리 미디어 데이터 컨트롤 */
+function handleMediaData(data: MessageDataType) {
+  dev.alias("test").log(data);
 }

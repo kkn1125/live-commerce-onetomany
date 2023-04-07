@@ -1,13 +1,10 @@
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import React, { ChangeEvent, useEffect, useState } from "react";
-import LiveVideoRoom from "../components/organisms/LiveVideoRoom";
+import LiveViewerRoom from "../components/organisms/LiveViewerRoom";
 import LiveSocket from "../model/LiveSocket";
-import LiveWebRTC from "../model/LiveWebRTC";
 import { dev } from "../util/tool";
 
-// let ls: LiveSocket;
-
-function Home() {
+function Viewer() {
   const [content, setContent] = useState("");
   const [liveSocket, setLiveSocket] = useState<LiveSocket | null>(null);
   const [isOpenSocket, setIsOpenSocket] = useState(false);
@@ -34,7 +31,7 @@ function Home() {
     if (!liveSocket.rtc) return;
 
     function handleSignal(signal: any, type: any, data: any) {
-      // console.log(signal, type, data);
+      console.log(signal, type, data);
       setChatList((chatList) => [
         ...chatList,
         {
@@ -101,7 +98,7 @@ function Home() {
   };
   return (
     <Stack>
-      {liveSocket && isOpenSocket && <LiveVideoRoom liveSocket={liveSocket} />}
+      {liveSocket && isOpenSocket && <LiveViewerRoom liveSocket={liveSocket} />}
       <Box>
         {chatList.map(({ signal, type, data }, i) => (
           <Stack direction='row' gap={3} key={i}>
@@ -123,4 +120,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default Viewer;
