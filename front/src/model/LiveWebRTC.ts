@@ -6,7 +6,8 @@ type RTCEventType = "icecandidate";
 type RTCCallbackType = (candidate: string) => void;
 
 export default class LiveWebRTC {
-  pc: RTCPeerConnection;
+  pc?: RTCPeerConnection;
+  config?: object;
   user?: User;
   localStream?: MediaStream;
   video: HTMLVideoElement = document.createElement("video");
@@ -29,29 +30,33 @@ export default class LiveWebRTC {
   }
 
   constructor(config: RTCConfiguration, constraints?: MediaStreamConstraints) {
+    this.config = config;
+    this.constraints = constraints || {
+      video: true,
+      audio: false,
+    };
+  }
+
+  createPeer() {
     dev.log("create rtc");
-    const pc = new RTCPeerConnection(config);
+    const pc = new RTCPeerConnection(this.config);
 
     pc.onicecandidate = (e) => {
       // console.log("onicecandidate", e);
-      console.log("on ice candidate");
+      dev.debug("on ice candidate");
       if (e.candidate) {
         if (!this.events["icecandidate"])
           this.events["icecandidate"] = () => {};
         // console.log(e.candidate);
         this.events["icecandidate"].call(this, e.candidate.candidate);
       }
-      this.offer = this.pc.localDescription;
+      this.offer = (this.pc as RTCPeerConnection).localDescription;
     };
 
     pc.ontrack = (e) => {
       console.log("ontrack", e);
     };
 
-    this.constraints = constraints || {
-      video: true,
-      audio: false,
-    };
     this.pc = pc;
   }
 
@@ -87,12 +92,16 @@ export default class LiveWebRTC {
   async getMedia() {
     const stream = await navigator.mediaDevices.getUserMedia(this.constraints);
     this.video.srcObject = this.localStream = stream;
-    stream.getTracks().forEach((track) => this.pc.addTrack(track, stream));
+    stream
+      .getTracks()
+      .forEach((track) =>
+        (this.pc as RTCPeerConnection).addTrack(track, stream)
+      );
   }
 
   async createOffer() {
     return new Promise(async (resolve) => {
-      const offer = await this.pc.createOffer();
+      const offer = await (this.pc as RTCPeerConnection).createOffer();
       this.offer = offer;
       this.setLocalDescription(offer);
       dev.alias("create offer").log(offer);
@@ -102,7 +111,9 @@ export default class LiveWebRTC {
 
   createAnswer() {
     return new Promise(async (resolve) => {
-      const answer = await this.pc.createAnswer({ offer: this.offer });
+      const answer = await (this.pc as RTCPeerConnection).createAnswer({
+        offer: this.offer,
+      });
       this.answer = answer;
       this.setLocalDescription(answer);
       resolve(answer);
@@ -120,13 +131,13 @@ export default class LiveWebRTC {
   }
 
   applyAnswer() {
-    this.pc.setLocalDescription();
+    (this.pc as RTCPeerConnection).setLocalDescription();
   }
 
   setLocalDescription(session: RTCSessionDescriptionInit) {
-    this.pc.setLocalDescription(session);
+    (this.pc as RTCPeerConnection).setLocalDescription(session);
   }
   setRemoteDescription(session: RTCSessionDescriptionInit) {
-    this.pc.setRemoteDescription(session);
+    (this.pc as RTCPeerConnection).setRemoteDescription(session);
   }
 }

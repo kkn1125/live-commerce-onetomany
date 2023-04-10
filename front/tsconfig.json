@@ -17,7 +17,8 @@
     "jsx": "react-jsx",
     "noImplicitAny": true,
     "noImplicitThis": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "strictPropertyInitialization": false
   },
   "include": ["src/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }]

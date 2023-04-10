@@ -24,7 +24,8 @@ fields.forEach((field, i) => {
     : null;
 });
 
-type DataType = "offer" | "answer";
+// type RoomType = "room"
+type DataType = "offer" | "answer" | "room" | "user";
 type SignalType = "chat" | "ice";
 
 type SignalEventType = `signal:${SignalType}` | `custom:${string}`;
@@ -58,12 +59,20 @@ export default class LiveSocket {
     CHAT: "signal:chat",
     ICE: "signal:ice",
   };
-  static readonly CUSTOM = (type: string) => `custom:${type}`;
-  static readonly ADD: { [k in "OFFER" | "ANSWER"]: DataEventType } = {
+  static readonly CUSTOM = (type: string): SignalEventType => `custom:${type}`;
+  static readonly ADD: {
+    [k in "OFFER" | "ANSWER" | "ROOM" | "USER"]: DataEventType;
+  } = {
+    USER: "add:user",
+    ROOM: "add:room",
     OFFER: "add:offer",
     ANSWER: "add:answer",
   };
-  static readonly LOAD: { [k in "OFFER" | "ANSWER"]: DataEventType } = {
+  static readonly LOAD: {
+    [k in "OFFER" | "ANSWER" | "ROOM" | "USER"]: DataEventType;
+  } = {
+    USER: "load:user",
+    ROOM: "load:room",
     OFFER: "load:offer",
     ANSWER: "load:answer",
   };
@@ -74,7 +83,7 @@ export default class LiveSocket {
   customEvents: Events;
   signalData: SignalDataType;
   rtc?: LiveWebRTC;
-  openning?: (a: boolean) => void;
+  onopenning?: (a: boolean) => void;
   listenOffer?: (data: any) => void;
   listenAnswer?: (data: any) => void;
   listenIce?: (data: any) => void;
@@ -155,6 +164,8 @@ export default class LiveSocket {
         },
       ],
     });
+    this.rtc?.createPeer();
+
     this.checkOpen();
   };
   onClose = (e: CloseEvent) => {
@@ -261,7 +272,7 @@ export default class LiveSocket {
   }
 
   checkOpen() {
-    this.openning?.(!!this.rtc);
+    this.onopenning?.(!!this.rtc);
   }
 
   on(type: EventType, cb: EventCallback) {

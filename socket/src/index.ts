@@ -5,6 +5,7 @@ import { PORT } from "./util/global";
 import { dev } from "./util/tool";
 
 import protobufjs from "protobufjs";
+import Manager from "./model/Manager";
 
 const { Message, Field } = protobufjs;
 function alreadyHasKey(key: string) {
@@ -29,6 +30,8 @@ fields.forEach((field, i) => {
       )(Message.prototype, field)
     : null;
 });
+
+const manager = new Manager();
 
 const app = uWS
   ./*SSL*/ App({
@@ -138,13 +141,42 @@ function handleBinary(ws: uWS.WebSocket<unknown>, message: ArrayBuffer) {
     server: true,
   } as MessageDataType;
   const handleData = { ...decoded, data: JSON.parse(decoded.data) };
-  dev.alias("binary data").log(decoded);
-  if (decoded.signal.match(/(signal):(.+)/)) {
+  // dev.alias("binary data").log(decoded);
+  const [$, type, method] = decoded.signal.match(/(.+):(.+)/) as [
+    string,
+    string,
+    string
+  ];
+  console.log("type:method", type, method);
+  if (type === "signal") {
     app.publish(
       "global",
       Message.encode(Message.create(decoded)).finish(),
       true
     );
+  } else if (type === "load") {
+    switch (method) {
+      case "room":
+        break;
+      case "user":
+        break;
+      case "offer":
+        break;
+      case "answer":
+        break;
+    }
+  } else if (type === "add") {
+    switch (method) {
+      case "room":
+        manager.create(handleData.data.roomId);
+        break;
+      case "user":
+        break;
+      case "offer":
+        break;
+      case "answer":
+        break;
+    }
   } else {
     handleMediaData(handleData);
     ws.publish(

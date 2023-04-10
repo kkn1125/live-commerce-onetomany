@@ -1,5 +1,6 @@
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import React, { ChangeEvent, useEffect, useState } from "react";
+import { v4 } from "uuid";
 import LiveVideoRoom from "../components/organisms/LiveVideoRoom";
 import LiveSocket from "../model/LiveSocket";
 import LiveWebRTC from "../model/LiveWebRTC";
@@ -22,39 +23,40 @@ function Home() {
   useEffect(() => {
     const liveSocket = new LiveSocket("ws", "localhost", 4000);
 
-    liveSocket.on(LiveSocket.SIGNAL.CHAT, handleSignal);
-    liveSocket.on("custom:test", handleTestSignal);
+    liveSocket.on(LiveSocket.SIGNAL.CHAT, (signal, type, data) => {
+      setChatList((chatList) => [
+        ...chatList,
+        {
+          signal,
+          type,
+          data,
+        },
+      ]);
+    });
+    liveSocket.on(LiveSocket.LOAD.ROOM, (signal, type, data) => {
+      console.log(data);
+    });
+    liveSocket.on(LiveSocket.CUSTOM("test"), (signal, type, data) => {
+      setChatList((chatList) => [
+        ...chatList,
+        {
+          signal,
+          type,
+          data,
+        },
+      ]);
+    });
+    liveSocket.on(LiveSocket.ADD.ROOM, (signal, type, data) => {});
 
     setLiveSocket(liveSocket);
 
-    liveSocket.openning = (result) => {
+    liveSocket.onopenning = (result) => {
       console.log("socket open!!", result);
+      liveSocket.signaling(LiveSocket.ADD.ROOM, { id: v4() });
+      liveSocket.signaling(LiveSocket.ADD.USER, { id: v4() });
       setIsOpenSocket((isOpenSocket) => true);
     };
     if (!liveSocket.rtc) return;
-
-    function handleSignal(signal: any, type: any, data: any) {
-      // console.log(signal, type, data);
-      setChatList((chatList) => [
-        ...chatList,
-        {
-          signal,
-          type,
-          data,
-        },
-      ]);
-    }
-    function handleTestSignal(signal: any, type: any, data: any) {
-      // console.log(signal, type, data);
-      setChatList((chatList) => [
-        ...chatList,
-        {
-          signal,
-          type,
-          data,
-        },
-      ]);
-    }
 
     return () => {
       liveSocket.disconnect();
@@ -76,7 +78,7 @@ function Home() {
       });
   };
   const sendSignalTest = () => {
-    liveSocket?.signaling("custom:test", {
+    liveSocket?.signaling(LiveSocket.CUSTOM("test"), {
       content,
     });
   };
@@ -96,7 +98,9 @@ function Home() {
     initialInput();
   };
   const handleClickSignalTest = () => {
-    sendSignalTest();
+    liveSocket?.signaling(LiveSocket.LOAD.ROOM, {
+      request: true,
+    });
     initialInput();
   };
   return (
